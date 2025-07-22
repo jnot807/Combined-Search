@@ -60,6 +60,7 @@
 
 <h2>🔎 Competitor LinkedIn Search (JSON API)</h2>
 <div class="json-search-box">
+  <input type="text" id="queryInput" placeholder="Enter keywords (e.g. data engineer, manager)" />
   <input type="text" id="company" placeholder="Enter company name (e.g. Nestlé)" />
   <select id="countrySite">
     <option value="">-- Select LinkedIn Country --</option>
@@ -126,16 +127,18 @@ const API_KEY = "AIzaSyDEEQi0TYf-2ULYA0G2Q6x1JHWH4NUrok8";
 const CX = "6742cda52f2e045d2";
 
 async function runCompetitorSearch() {
+  const keywordQuery = document.getElementById("queryInput").value.trim();
   const company = document.getElementById("company").value.trim();
   const countrySite = document.getElementById("countrySite").value;
 
   let fullQuery = "";
 
   if (countrySite) fullQuery += `site:${countrySite} `;
-  if (company) fullQuery += `intitle:\"${company}\"`;
+  if (company) fullQuery += `intitle:\"${company}\" `;
+  if (keywordQuery) fullQuery += keywordQuery;
 
   if (!fullQuery) {
-    alert("Please enter a company or select a country");
+    alert("Please enter a query or filter");
     return;
   }
 
