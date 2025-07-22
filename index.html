@@ -41,6 +41,22 @@
       opacity: 0.5;
       cursor: not-allowed;
     }
+    .country-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 0.5rem;
+    }
+    .country-tab {
+      background: #2a2a2a;
+      padding: 0.5rem 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .country-tab.active {
+      background: #4ac3ff;
+      color: black;
+    }
     #jsonResults ul {
       list-style: none;
       padding-left: 0;
@@ -63,6 +79,9 @@
 <div class="json-search-box">
   <input type="text" id="queryInput" placeholder="Enter keywords (e.g. data engineer, manager)" />
   <input type="text" id="company" placeholder="Enter company name (e.g. Nestlé)" />
+
+  <div class="country-tabs" id="countryTabs"></div>
+
   <button onclick="runCompetitorSearch()">Search</button>
   <button id="saveBtn" disabled onclick="saveResults()">💾 Save Results as HTML</button>
 </div>
@@ -79,12 +98,88 @@ const CX = "729f737642d434e00";
 let lastResults = [];
 let currentStartIndex = 1;
 let currentQuery = "";
+let selectedSite = "";
+
+const countries = {
+  "Argentina": "ar.linkedin.com/in",
+  "Australia": "au.linkedin.com/in",
+  "Austria": "at.linkedin.com/in",
+  "Belgium": "be.linkedin.com/in",
+  "Brazil": "br.linkedin.com/in",
+  "Bulgaria": "bg.linkedin.com/in",
+  "Canada": "ca.linkedin.com/in",
+  "Chile": "cl.linkedin.com/in",
+  "Colombia": "co.linkedin.com/in",
+  "Cyprus": "cy.linkedin.com/in",
+  "Czech Republic": "cz.linkedin.com/in",
+  "Denmark": "dk.linkedin.com/in",
+  "Egypt": "eg.linkedin.com/in",
+  "Estonia": "ee.linkedin.com/in",
+  "Finland": "fi.linkedin.com/in",
+  "France": "fr.linkedin.com/in",
+  "Germany": "de.linkedin.com/in",
+  "Greece": "gr.linkedin.com/in",
+  "Hong Kong": "hk.linkedin.com/in",
+  "Hungary": "hu.linkedin.com/in",
+  "Iceland": "is.linkedin.com/in",
+  "India": "in.linkedin.com/in",
+  "Ireland": "ie.linkedin.com/in",
+  "Italy": "it.linkedin.com/in",
+  "Japan": "jp.linkedin.com/in",
+  "Korea": "kr.linkedin.com/in",
+  "Latvia": "lv.linkedin.com/in",
+  "Lithuania": "lt.linkedin.com/in",
+  "Luxembourg": "lu.linkedin.com/in",
+  "Malaysia": "my.linkedin.com/in",
+  "Malta": "mt.linkedin.com/in",
+  "Mexico": "mx.linkedin.com/in",
+  "Netherlands": "nl.linkedin.com/in",
+  "New Zealand": "nz.linkedin.com/in",
+  "Nigeria": "ng.linkedin.com/in",
+  "Norway": "no.linkedin.com/in",
+  "Philippines": "ph.linkedin.com/in",
+  "Poland": "pl.linkedin.com/in",
+  "Portugal": "pt.linkedin.com/in",
+  "Romania": "ro.linkedin.com/in",
+  "Saudi Arabia": "sa.linkedin.com/in",
+  "Singapore": "sg.linkedin.com/in",
+  "Slovakia": "sk.linkedin.com/in",
+  "Slovenia": "si.linkedin.com/in",
+  "South Africa": "za.linkedin.com/in",
+  "Spain": "es.linkedin.com/in",
+  "Sweden": "se.linkedin.com/in",
+  "Switzerland": "ch.linkedin.com/in",
+  "UAE": "ae.linkedin.com/in",
+  "UK": "uk.linkedin.com/in",
+  "USA": "us.linkedin.com/in",
+  "Vietnam": "vn.linkedin.com/in",
+  "Global": "linkedin.com/in"
+};
+
+const tabsContainer = document.getElementById("countryTabs");
+Object.entries(countries).sort().forEach(([name, url]) => {
+  const tab = document.createElement("div");
+  tab.className = "country-tab";
+  tab.textContent = name;
+  tab.onclick = () => {
+    document.querySelectorAll(".country-tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    selectedSite = url;
+  };
+  tabsContainer.appendChild(tab);
+});
 
 async function runCompetitorSearch() {
+  currentStartIndex = 1;
+  await searchAtPage();
+}
+
+async function searchAtPage() {
   const keywordQuery = document.getElementById("queryInput").value.trim();
   const company = document.getElementById("company").value.trim();
 
   let fullQuery = "";
+  if (selectedSite) fullQuery += `site:${selectedSite} `;
   if (company) fullQuery += `intitle:"${company}" `;
   if (keywordQuery) fullQuery += keywordQuery;
   if (!fullQuery) {
@@ -92,10 +187,8 @@ async function runCompetitorSearch() {
     return;
   }
 
-  currentQuery = fullQuery; // Store for pagination
-
-  const url = `https://www.googleapis.com/customsearch/v1?key=${API_KEY}&cx=${CX}&q=${encodeURIComponent(fullQuery)}&start=${currentStartIndex}`;
-  const response = await fetch(url);
+  currentQuery = fullQuery;
+  const response = await fetch(`https://www.googleapis.com/customsearch/v1?key=${API_KEY}&cx=${CX}&q=${encodeURIComponent(fullQuery)}&start=${currentStartIndex}`);
   const data = await response.json();
 
   const resultsDiv = document.getElementById("jsonResults");
@@ -115,14 +208,13 @@ async function runCompetitorSearch() {
 
   resultsDiv.innerHTML += "</ul>";
 
-  // Handle pagination buttons
   document.getElementById("prevBtn").disabled = currentStartIndex === 1;
   document.getElementById("nextBtn").disabled = !data.queries?.nextPage;
 }
 
 function changePage(direction) {
   currentStartIndex += direction * 10;
-  runCompetitorSearch();
+  searchAtPage();
 }
 
 function saveResults() {
