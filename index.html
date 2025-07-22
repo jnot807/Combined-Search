@@ -4,7 +4,6 @@
   <title>Competitor Search (JSON API)</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="assets/css/main.css" />
   <style>
     body {
       background-color: #0f0f0f;
@@ -38,22 +37,6 @@
       color: white;
       cursor: pointer;
     }
-    .country-tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 0.5rem;
-    }
-    .country-tab {
-      background: #2a2a2a;
-      padding: 0.5rem 0.8rem;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .country-tab.active {
-      background: #4ac3ff;
-      color: black;
-    }
     #jsonResults ul {
       list-style: none;
       padding-left: 0;
@@ -76,10 +59,8 @@
 <div class="json-search-box">
   <input type="text" id="queryInput" placeholder="Enter keywords (e.g. data engineer, manager)" />
   <input type="text" id="company" placeholder="Enter company name (e.g. Nestlé)" />
-
-  <div class="country-tabs" id="countryTabs"></div>
-
   <button onclick="runCompetitorSearch()">Search</button>
+  <button id="saveBtn" style="display:none;" onclick="saveResults()">💾 Save Results as HTML</button>
 </div>
 
 <div id="jsonResults"></div>
@@ -87,88 +68,15 @@
 <script>
 const API_KEY = "AIzaSyDEEQi0TYf-2ULYA0G2Q6x1JHWH4NUrok8";
 const CX = "729f737642d434e00";
-
-const countries = {
-  "Argentina": "ar.linkedin.com/in",
-  "Australia": "au.linkedin.com/in",
-  "Austria": "at.linkedin.com/in",
-  "Belgium": "be.linkedin.com/in",
-  "Brazil": "br.linkedin.com/in",
-  "Bulgaria": "bg.linkedin.com/in",
-  "Canada": "ca.linkedin.com/in",
-  "Chile": "cl.linkedin.com/in",
-  "Colombia": "co.linkedin.com/in",
-  "Cyprus": "cy.linkedin.com/in",
-  "Czech Republic": "cz.linkedin.com/in",
-  "Denmark": "dk.linkedin.com/in",
-  "Egypt": "eg.linkedin.com/in",
-  "Estonia": "ee.linkedin.com/in",
-  "Finland": "fi.linkedin.com/in",
-  "France": "fr.linkedin.com/in",
-  "Germany": "de.linkedin.com/in",
-  "Greece": "gr.linkedin.com/in",
-  "Hong Kong": "hk.linkedin.com/in",
-  "Hungary": "hu.linkedin.com/in",
-  "Iceland": "is.linkedin.com/in",
-  "India": "in.linkedin.com/in",
-  "Ireland": "ie.linkedin.com/in",
-  "Italy": "it.linkedin.com/in",
-  "Japan": "jp.linkedin.com/in",
-  "Korea": "kr.linkedin.com/in",
-  "Latvia": "lv.linkedin.com/in",
-  "Lithuania": "lt.linkedin.com/in",
-  "Luxembourg": "lu.linkedin.com/in",
-  "Malaysia": "my.linkedin.com/in",
-  "Malta": "mt.linkedin.com/in",
-  "Mexico": "mx.linkedin.com/in",
-  "Netherlands": "nl.linkedin.com/in",
-  "New Zealand": "nz.linkedin.com/in",
-  "Nigeria": "ng.linkedin.com/in",
-  "Norway": "no.linkedin.com/in",
-  "Philippines": "ph.linkedin.com/in",
-  "Poland": "pl.linkedin.com/in",
-  "Portugal": "pt.linkedin.com/in",
-  "Romania": "ro.linkedin.com/in",
-  "Saudi Arabia": "sa.linkedin.com/in",
-  "Singapore": "sg.linkedin.com/in",
-  "Slovakia": "sk.linkedin.com/in",
-  "Slovenia": "si.linkedin.com/in",
-  "South Africa": "za.linkedin.com/in",
-  "Spain": "es.linkedin.com/in",
-  "Sweden": "se.linkedin.com/in",
-  "Switzerland": "ch.linkedin.com/in",
-  "United Arab Emirates": "ae.linkedin.com/in",
-  "United Kingdom": "uk.linkedin.com/in",
-  "United States": "us.linkedin.com/in",
-  "Vietnam": "vn.linkedin.com/in",
-  "Global": "linkedin.com/in"
-};
-
-let selectedSite = "";
-const tabsContainer = document.getElementById("countryTabs");
-
-Object.entries(countries).sort().forEach(([name, url]) => {
-  const tab = document.createElement("div");
-  tab.className = "country-tab";
-  tab.textContent = name;
-  tab.onclick = () => {
-    document.querySelectorAll(".country-tab").forEach(t => t.classList.remove("active"));
-    tab.classList.add("active");
-    selectedSite = url;
-  };
-  tabsContainer.appendChild(tab);
-});
+let lastResults = [];
 
 async function runCompetitorSearch() {
   const keywordQuery = document.getElementById("queryInput").value.trim();
   const company = document.getElementById("company").value.trim();
 
   let fullQuery = "";
-  if (selectedSite) fullQuery += `site:${selectedSite} `;
   if (company) fullQuery += `intitle:\"${company}\" `;
   if (keywordQuery) fullQuery += keywordQuery;
-
-  console.log("Running query:", fullQuery);
 
   if (!fullQuery) {
     alert("Please enter a query or filter");
@@ -180,16 +88,55 @@ async function runCompetitorSearch() {
 
   const resultsDiv = document.getElementById("jsonResults");
   resultsDiv.innerHTML = "<h3>Search Results</h3><ul>";
+  lastResults = [];
 
   if (data.items) {
+    document.getElementById("saveBtn").style.display = "inline-block";
     data.items.forEach(item => {
       resultsDiv.innerHTML += `<li><a href="${item.link}" target="_blank">${item.title}</a><br>${item.snippet}</li>`;
+      lastResults.push({ title: item.title, link: item.link, snippet: item.snippet });
     });
   } else {
+    document.getElementById("saveBtn").style.display = "none";
     resultsDiv.innerHTML += "<li>No results found.</li>";
   }
 
   resultsDiv.innerHTML += "</ul>";
+}
+
+function saveResults() {
+  if (!lastResults.length) return;
+
+  let htmlContent = `
+    <html>
+    <head><meta charset="utf-8"><title>Saved Search Results</title></head>
+    <body>
+    <h2>Search Results</h2>
+    <table border="1" cellpadding="8" cellspacing="0">
+      <thead><tr><th>Title</th><th>Link</th><th>Snippet</th></tr></thead>
+      <tbody>
+  `;
+
+  lastResults.forEach(item => {
+    htmlContent += `
+      <tr>
+        <td>${item.title}</td>
+        <td><a href="${item.link}" target="_blank">${item.link}</a></td>
+        <td>${item.snippet}</td>
+      </tr>
+    `;
+  });
+
+  htmlContent += `</tbody></table></body></html>`;
+
+  const blob = new Blob([htmlContent], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "search_results.html";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 </script>
 
