@@ -37,6 +37,10 @@
       color: white;
       cursor: pointer;
     }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
     #jsonResults ul {
       list-style: none;
       padding-left: 0;
@@ -60,30 +64,38 @@
   <input type="text" id="queryInput" placeholder="Enter keywords (e.g. data engineer, manager)" />
   <input type="text" id="company" placeholder="Enter company name (e.g. Nestlé)" />
   <button onclick="runCompetitorSearch()">Search</button>
-  <button id="saveBtn" style="display:none;" onclick="saveResults()">💾 Save Results as HTML</button>
+  <button id="saveBtn" disabled onclick="saveResults()">💾 Save Results as HTML</button>
 </div>
 
 <div id="jsonResults"></div>
+<div id="pagination" style="margin-top: 1rem; display: flex; gap: 1rem;">
+  <button id="prevBtn" disabled onclick="changePage(-1)">⬅️ Previous</button>
+  <button id="nextBtn" disabled onclick="changePage(1)">Next ➡️</button>
+</div>
 
 <script>
 const API_KEY = "AIzaSyDEEQi0TYf-2ULYA0G2Q6x1JHWH4NUrok8";
 const CX = "729f737642d434e00";
 let lastResults = [];
+let currentStartIndex = 1;
+let currentQuery = "";
 
 async function runCompetitorSearch() {
   const keywordQuery = document.getElementById("queryInput").value.trim();
   const company = document.getElementById("company").value.trim();
 
   let fullQuery = "";
-  if (company) fullQuery += `intitle:\"${company}\" `;
+  if (company) fullQuery += `intitle:"${company}" `;
   if (keywordQuery) fullQuery += keywordQuery;
-
   if (!fullQuery) {
     alert("Please enter a query or filter");
     return;
   }
 
-  const response = await fetch(`https://www.googleapis.com/customsearch/v1?key=${API_KEY}&cx=${CX}&q=${encodeURIComponent(fullQuery)}`);
+  currentQuery = fullQuery; // Store for pagination
+
+  const url = `https://www.googleapis.com/customsearch/v1?key=${API_KEY}&cx=${CX}&q=${encodeURIComponent(fullQuery)}&start=${currentStartIndex}`;
+  const response = await fetch(url);
   const data = await response.json();
 
   const resultsDiv = document.getElementById("jsonResults");
@@ -91,17 +103,26 @@ async function runCompetitorSearch() {
   lastResults = [];
 
   if (data.items) {
-    document.getElementById("saveBtn").style.display = "inline-block";
+    document.getElementById("saveBtn").disabled = false;
     data.items.forEach(item => {
       resultsDiv.innerHTML += `<li><a href="${item.link}" target="_blank">${item.title}</a><br>${item.snippet}</li>`;
       lastResults.push({ title: item.title, link: item.link, snippet: item.snippet });
     });
   } else {
-    document.getElementById("saveBtn").style.display = "none";
+    document.getElementById("saveBtn").disabled = true;
     resultsDiv.innerHTML += "<li>No results found.</li>";
   }
 
   resultsDiv.innerHTML += "</ul>";
+
+  // Handle pagination buttons
+  document.getElementById("prevBtn").disabled = currentStartIndex === 1;
+  document.getElementById("nextBtn").disabled = !data.queries?.nextPage;
+}
+
+function changePage(direction) {
+  currentStartIndex += direction * 10;
+  runCompetitorSearch();
 }
 
 function saveResults() {
