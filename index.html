@@ -79,102 +79,76 @@
 <div class="json-search-box">
   <input type="text" id="queryInput" placeholder="Enter keywords (e.g. data engineer, manager)" />
   <input type="text" id="company" placeholder="Enter company name (e.g. Nestlé)" />
-
   <div class="country-tabs" id="countryTabs"></div>
-
   <button onclick="runCompetitorSearch()">Search</button>
   <button id="saveBtn" disabled onclick="saveResults()">💾 Save Results as HTML</button>
 </div>
 
-<div id="jsonResults"></div>
-<div id="pagination" style="margin-top: 1rem; display: flex; gap: 1rem;">
-  <button id="prevBtn" disabled onclick="changePage(-1)">⬅️ Previous</button>
-  <button id="nextBtn" disabled onclick="changePage(1)">Next ➡️</button>
-</div>
+<div id="jsonResults"><ul></ul></div>
 
 <script>
 const API_KEY = "AIzaSyDEEQi0TYf-2ULYA0G2Q6x1JHWH4NUrok8";
 const CX = "729f737642d434e00";
-let lastResults = [];
-let currentStartIndex = 1;
 let currentQuery = "";
 let selectedSite = "";
+let nextStartIndex = 1;
+let lastResults = [];
+let isFetching = false;
+let allDone = false;
 
 const countries = {
-  "Argentina": "ar.linkedin.com/in",
-  "Australia": "au.linkedin.com/in",
-  "Austria": "at.linkedin.com/in",
-  "Belgium": "be.linkedin.com/in",
-  "Brazil": "br.linkedin.com/in",
-  "Bulgaria": "bg.linkedin.com/in",
-  "Canada": "ca.linkedin.com/in",
-  "Chile": "cl.linkedin.com/in",
-  "Colombia": "co.linkedin.com/in",
-  "Cyprus": "cy.linkedin.com/in",
-  "Czech Republic": "cz.linkedin.com/in",
-  "Denmark": "dk.linkedin.com/in",
-  "Egypt": "eg.linkedin.com/in",
-  "Estonia": "ee.linkedin.com/in",
-  "Finland": "fi.linkedin.com/in",
-  "France": "fr.linkedin.com/in",
-  "Germany": "de.linkedin.com/in",
-  "Greece": "gr.linkedin.com/in",
-  "Hong Kong": "hk.linkedin.com/in",
-  "Hungary": "hu.linkedin.com/in",
-  "Iceland": "is.linkedin.com/in",
-  "India": "in.linkedin.com/in",
-  "Ireland": "ie.linkedin.com/in",
-  "Italy": "it.linkedin.com/in",
-  "Japan": "jp.linkedin.com/in",
-  "Korea": "kr.linkedin.com/in",
-  "Latvia": "lv.linkedin.com/in",
-  "Lithuania": "lt.linkedin.com/in",
-  "Luxembourg": "lu.linkedin.com/in",
-  "Malaysia": "my.linkedin.com/in",
-  "Malta": "mt.linkedin.com/in",
-  "Mexico": "mx.linkedin.com/in",
-  "Netherlands": "nl.linkedin.com/in",
-  "New Zealand": "nz.linkedin.com/in",
-  "Nigeria": "ng.linkedin.com/in",
-  "Norway": "no.linkedin.com/in",
-  "Philippines": "ph.linkedin.com/in",
-  "Poland": "pl.linkedin.com/in",
-  "Portugal": "pt.linkedin.com/in",
-  "Romania": "ro.linkedin.com/in",
-  "Saudi Arabia": "sa.linkedin.com/in",
-  "Singapore": "sg.linkedin.com/in",
-  "Slovakia": "sk.linkedin.com/in",
-  "Slovenia": "si.linkedin.com/in",
-  "South Africa": "za.linkedin.com/in",
-  "Spain": "es.linkedin.com/in",
-  "Sweden": "se.linkedin.com/in",
-  "Switzerland": "ch.linkedin.com/in",
-  "UAE": "ae.linkedin.com/in",
-  "UK": "uk.linkedin.com/in",
-  "USA": "us.linkedin.com/in",
-  "Vietnam": "vn.linkedin.com/in",
+  "Argentina": "ar.linkedin.com/in", "Australia": "au.linkedin.com/in", "Austria": "at.linkedin.com/in",
+  "Belgium": "be.linkedin.com/in", "Brazil": "br.linkedin.com/in", "Bulgaria": "bg.linkedin.com/in",
+  "Canada": "ca.linkedin.com/in", "Chile": "cl.linkedin.com/in", "Colombia": "co.linkedin.com/in",
+  "Cyprus": "cy.linkedin.com/in", "Czech Republic": "cz.linkedin.com/in", "Denmark": "dk.linkedin.com/in",
+  "Egypt": "eg.linkedin.com/in", "Estonia": "ee.linkedin.com/in", "Finland": "fi.linkedin.com/in",
+  "France": "fr.linkedin.com/in", "Germany": "de.linkedin.com/in", "Greece": "gr.linkedin.com/in",
+  "Hong Kong": "hk.linkedin.com/in", "Hungary": "hu.linkedin.com/in", "Iceland": "is.linkedin.com/in",
+  "India": "in.linkedin.com/in", "Ireland": "ie.linkedin.com/in", "Italy": "it.linkedin.com/in",
+  "Japan": "jp.linkedin.com/in", "Korea": "kr.linkedin.com/in", "Latvia": "lv.linkedin.com/in",
+  "Lithuania": "lt.linkedin.com/in", "Luxembourg": "lu.linkedin.com/in", "Malaysia": "my.linkedin.com/in",
+  "Malta": "mt.linkedin.com/in", "Mexico": "mx.linkedin.com/in", "Netherlands": "nl.linkedin.com/in",
+  "New Zealand": "nz.linkedin.com/in", "Nigeria": "ng.linkedin.com/in", "Norway": "no.linkedin.com/in",
+  "Philippines": "ph.linkedin.com/in", "Poland": "pl.linkedin.com/in", "Portugal": "pt.linkedin.com/in",
+  "Romania": "ro.linkedin.com/in", "Saudi Arabia": "sa.linkedin.com/in", "Singapore": "sg.linkedin.com/in",
+  "Slovakia": "sk.linkedin.com/in", "Slovenia": "si.linkedin.com/in", "South Africa": "za.linkedin.com/in",
+  "Spain": "es.linkedin.com/in", "Sweden": "se.linkedin.com/in", "Switzerland": "ch.linkedin.com/in",
+  "UAE": "ae.linkedin.com/in", "UK": "uk.linkedin.com/in", "USA": "us.linkedin.com/in", "Vietnam": "vn.linkedin.com/in",
   "Global": "linkedin.com/in"
 };
 
-const tabsContainer = document.getElementById("countryTabs");
-Object.entries(countries).sort().forEach(([name, url]) => {
-  const tab = document.createElement("div");
-  tab.className = "country-tab";
-  tab.textContent = name;
-  tab.onclick = () => {
-    document.querySelectorAll(".country-tab").forEach(t => t.classList.remove("active"));
-    tab.classList.add("active");
-    selectedSite = url;
-  };
-  tabsContainer.appendChild(tab);
+document.addEventListener("DOMContentLoaded", () => {
+  const tabsContainer = document.getElementById("countryTabs");
+  Object.entries(countries).sort().forEach(([name, url]) => {
+    const tab = document.createElement("div");
+    tab.className = "country-tab";
+    tab.textContent = name;
+    tab.onclick = () => {
+      document.querySelectorAll(".country-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      selectedSite = url;
+    };
+    tabsContainer.appendChild(tab);
+  });
+
+  window.addEventListener("scroll", () => {
+    if (allDone || isFetching) return;
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+      fetchMoreResults();
+    }
+  });
 });
 
 async function runCompetitorSearch() {
-  currentStartIndex = 1;
-  await searchAtPage();
+  document.getElementById("jsonResults").innerHTML = "<ul></ul>";
+  document.getElementById("saveBtn").disabled = true;
+  lastResults = [];
+  nextStartIndex = 1;
+  allDone = false;
+  await fetchMoreResults();
 }
 
-async function searchAtPage() {
+async function fetchMoreResults() {
   const keywordQuery = document.getElementById("queryInput").value.trim();
   const company = document.getElementById("company").value.trim();
 
@@ -187,34 +161,28 @@ async function searchAtPage() {
     return;
   }
 
-  currentQuery = fullQuery;
-  const response = await fetch(`https://www.googleapis.com/customsearch/v1?key=${API_KEY}&cx=${CX}&q=${encodeURIComponent(fullQuery)}&start=${currentStartIndex}`);
+  isFetching = true;
+  const url = `https://www.googleapis.com/customsearch/v1?key=${API_KEY}&cx=${CX}&q=${encodeURIComponent(fullQuery)}&start=${nextStartIndex}`;
+  const response = await fetch(url);
   const data = await response.json();
 
-  const resultsDiv = document.getElementById("jsonResults");
-  resultsDiv.innerHTML = "<h3>Search Results</h3><ul>";
-  lastResults = [];
-
+  const ul = document.querySelector("#jsonResults ul");
   if (data.items) {
     document.getElementById("saveBtn").disabled = false;
     data.items.forEach(item => {
-      resultsDiv.innerHTML += `<li><a href="${item.link}" target="_blank">${item.title}</a><br>${item.snippet}</li>`;
+      const li = document.createElement("li");
+      li.innerHTML = `<a href="${item.link}" target="_blank">${item.title}</a><br>${item.snippet}`;
+      ul.appendChild(li);
       lastResults.push({ title: item.title, link: item.link, snippet: item.snippet });
     });
+    nextStartIndex += 10;
+    if (!data.queries?.nextPage || nextStartIndex > 100) allDone = true;
   } else {
-    document.getElementById("saveBtn").disabled = true;
-    resultsDiv.innerHTML += "<li>No results found.</li>";
+    allDone = true;
+    if (nextStartIndex === 1) ul.innerHTML += "<li>No results found.</li>";
   }
 
-  resultsDiv.innerHTML += "</ul>";
-
-  document.getElementById("prevBtn").disabled = currentStartIndex === 1;
-  document.getElementById("nextBtn").disabled = !data.queries?.nextPage;
-}
-
-function changePage(direction) {
-  currentStartIndex += direction * 10;
-  searchAtPage();
+  isFetching = false;
 }
 
 function saveResults() {
