@@ -154,7 +154,7 @@ async function fetchMoreResults() {
 
   let fullQuery = "";
   if (selectedSite) fullQuery += `site:${selectedSite} `;
-  if (company) fullQuery += `intitle:"${company}" `;
+  if (company) fullQuery += `intitle:\"${company}\" `;
   if (keywordQuery) fullQuery += keywordQuery;
   if (!fullQuery) {
     alert("Please enter a query or filter");
