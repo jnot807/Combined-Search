@@ -20,18 +20,16 @@
       display: flex;
       flex-direction: column;
       gap: 1rem;
-      max-width: 700px;
+      max-width: 900px;
     }
     .json-search-box input,
-    .json-search-box select,
     .json-search-box button {
       padding: 0.8rem;
       border-radius: 8px;
       border: none;
       font-size: 1rem;
     }
-    .json-search-box input,
-    .json-search-box select {
+    .json-search-box input {
       background: #2a2a2a;
       color: white;
     }
@@ -39,6 +37,22 @@
       background: #333;
       color: white;
       cursor: pointer;
+    }
+    .country-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 0.5rem;
+    }
+    .country-tab {
+      background: #2a2a2a;
+      padding: 0.5rem 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .country-tab.active {
+      background: #4ac3ff;
+      color: black;
     }
     #jsonResults ul {
       list-style: none;
@@ -62,61 +76,9 @@
 <div class="json-search-box">
   <input type="text" id="queryInput" placeholder="Enter keywords (e.g. data engineer, manager)" />
   <input type="text" id="company" placeholder="Enter company name (e.g. Nestlé)" />
-  <select id="countrySite">
-    <option value="">-- Select LinkedIn Country --</option>
-    <option value="ae.linkedin.com/in">UAE</option>
-    <option value="co.linkedin.com/in">Colombia</option>
-    <option value="nz.linkedin.com/in">New Zealand</option>
-    <option value="za.linkedin.com/in">South Africa</option>
-    <option value="vn.linkedin.com/in">Vietnam</option>
-    <option value="us.linkedin.com/in">United States</option>
-    <option value="sg.linkedin.com/in">Singapore</option>
-    <option value="sa.linkedin.com/in">Saudi Arabia</option>
-    <option value="ph.linkedin.com/in">Philippines</option>
-    <option value="ng.linkedin.com/in">Nigeria</option>
-    <option value="my.linkedin.com/in">Malaysia</option>
-    <option value="mx.linkedin.com/in">Mexico</option>
-    <option value="kr.linkedin.com/in">South Korea</option>
-    <option value="jp.linkedin.com/in">Japan</option>
-    <option value="in.linkedin.com/in">India</option>
-    <option value="hk.linkedin.com/in">Hong Kong</option>
-    <option value="eg.linkedin.com/in">Egypt</option>
-    <option value="cl.linkedin.com/in">Chile</option>
-    <option value="ca.linkedin.com/in">Canada</option>
-    <option value="ar.linkedin.com/in">Argentina</option>
-    <option value="au.linkedin.com/in">Australia</option>
-    <option value="ch.linkedin.com/in">Switzerland</option>
-    <option value="se.linkedin.com/in">Sweden</option>
-    <option value="si.linkedin.com/in">Slovenia</option>
-    <option value="sk.linkedin.com/in">Slovakia</option>
-    <option value="ro.linkedin.com/in">Romania</option>
-    <option value="pt.linkedin.com/in">Portugal</option>
-    <option value="no.linkedin.com/in">Norway</option>
-    <option value="mt.linkedin.com/in">Malta</option>
-    <option value="lu.linkedin.com/in">Luxembourg</option>
-    <option value="lt.linkedin.com/in">Lithuania</option>
-    <option value="lv.linkedin.com/in">Latvia</option>
-    <option value="ie.linkedin.com/in">Ireland</option>
-    <option value="is.linkedin.com/in">Iceland</option>
-    <option value="fi.linkedin.com/in">Finland</option>
-    <option value="cy.linkedin.com/in">Cyprus</option>
-    <option value="ee.linkedin.com/in">Estonia</option>
-    <option value="gr.linkedin.com/in">Greece</option>
-    <option value="cz.linkedin.com/in">Czech Republic</option>
-    <option value="hu.linkedin.com/in">Hungary</option>
-    <option value="it.linkedin.com/in">Italy</option>
-    <option value="pl.linkedin.com/in">Poland</option>
-    <option value="bg.linkedin.com/in">Bulgaria</option>
-    <option value="at.linkedin.com/in">Austria</option>
-    <option value="fr.linkedin.com/in">France</option>
-    <option value="uk.linkedin.com/in">United Kingdom</option>
-    <option value="de.linkedin.com/in">Germany</option>
-    <option value="es.linkedin.com/in">Spain</option>
-    <option value="dk.linkedin.com/in">Denmark</option>
-    <option value="nl.linkedin.com/in">Netherlands</option>
-    <option value="br.linkedin.com/in">Brazil</option>
-    <option value="linkedin.com/in">Global</option>
-  </select>
+
+  <div class="country-tabs" id="countryTabs"></div>
+
   <button onclick="runCompetitorSearch()">Search</button>
 </div>
 
@@ -126,16 +88,87 @@
 const API_KEY = "AIzaSyDEEQi0TYf-2ULYA0G2Q6x1JHWH4NUrok8";
 const CX = "729f737642d434e00";
 
+const countries = {
+  "Argentina": "ar.linkedin.com/in",
+  "Australia": "au.linkedin.com/in",
+  "Austria": "at.linkedin.com/in",
+  "Belgium": "be.linkedin.com/in",
+  "Brazil": "br.linkedin.com/in",
+  "Bulgaria": "bg.linkedin.com/in",
+  "Canada": "ca.linkedin.com/in",
+  "Chile": "cl.linkedin.com/in",
+  "Colombia": "co.linkedin.com/in",
+  "Cyprus": "cy.linkedin.com/in",
+  "Czech Republic": "cz.linkedin.com/in",
+  "Denmark": "dk.linkedin.com/in",
+  "Egypt": "eg.linkedin.com/in",
+  "Estonia": "ee.linkedin.com/in",
+  "Finland": "fi.linkedin.com/in",
+  "France": "fr.linkedin.com/in",
+  "Germany": "de.linkedin.com/in",
+  "Greece": "gr.linkedin.com/in",
+  "Hong Kong": "hk.linkedin.com/in",
+  "Hungary": "hu.linkedin.com/in",
+  "Iceland": "is.linkedin.com/in",
+  "India": "in.linkedin.com/in",
+  "Ireland": "ie.linkedin.com/in",
+  "Italy": "it.linkedin.com/in",
+  "Japan": "jp.linkedin.com/in",
+  "Korea": "kr.linkedin.com/in",
+  "Latvia": "lv.linkedin.com/in",
+  "Lithuania": "lt.linkedin.com/in",
+  "Luxembourg": "lu.linkedin.com/in",
+  "Malaysia": "my.linkedin.com/in",
+  "Malta": "mt.linkedin.com/in",
+  "Mexico": "mx.linkedin.com/in",
+  "Netherlands": "nl.linkedin.com/in",
+  "New Zealand": "nz.linkedin.com/in",
+  "Nigeria": "ng.linkedin.com/in",
+  "Norway": "no.linkedin.com/in",
+  "Philippines": "ph.linkedin.com/in",
+  "Poland": "pl.linkedin.com/in",
+  "Portugal": "pt.linkedin.com/in",
+  "Romania": "ro.linkedin.com/in",
+  "Saudi Arabia": "sa.linkedin.com/in",
+  "Singapore": "sg.linkedin.com/in",
+  "Slovakia": "sk.linkedin.com/in",
+  "Slovenia": "si.linkedin.com/in",
+  "South Africa": "za.linkedin.com/in",
+  "Spain": "es.linkedin.com/in",
+  "Sweden": "se.linkedin.com/in",
+  "Switzerland": "ch.linkedin.com/in",
+  "United Arab Emirates": "ae.linkedin.com/in",
+  "United Kingdom": "uk.linkedin.com/in",
+  "United States": "us.linkedin.com/in",
+  "Vietnam": "vn.linkedin.com/in",
+  "Global": "linkedin.com/in"
+};
+
+let selectedSite = "";
+const tabsContainer = document.getElementById("countryTabs");
+
+Object.entries(countries).sort().forEach(([name, url]) => {
+  const tab = document.createElement("div");
+  tab.className = "country-tab";
+  tab.textContent = name;
+  tab.onclick = () => {
+    document.querySelectorAll(".country-tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    selectedSite = url;
+  };
+  tabsContainer.appendChild(tab);
+});
+
 async function runCompetitorSearch() {
   const keywordQuery = document.getElementById("queryInput").value.trim();
   const company = document.getElementById("company").value.trim();
-  const countrySite = document.getElementById("countrySite").value;
 
   let fullQuery = "";
-
-  if (countrySite) fullQuery += `site:${countrySite} `;
-  if (company) fullQuery += `intitle:"${company}" `;
+  if (selectedSite) fullQuery += `site:${selectedSite} `;
+  if (company) fullQuery += `intitle:\"${company}\" `;
   if (keywordQuery) fullQuery += keywordQuery;
+
+  console.log("Running query:", fullQuery);
 
   if (!fullQuery) {
     alert("Please enter a query or filter");
