@@ -124,7 +124,7 @@
 
 <script>
 const API_KEY = "AIzaSyDEEQi0TYf-2ULYA0G2Q6x1JHWH4NUrok8";
-const CX = "6742cda52f2e045d2";
+const CX = "729f737642d434e00";
 
 async function runCompetitorSearch() {
   const keywordQuery = document.getElementById("queryInput").value.trim();
@@ -134,7 +134,7 @@ async function runCompetitorSearch() {
   let fullQuery = "";
 
   if (countrySite) fullQuery += `site:${countrySite} `;
-  if (company) fullQuery += `intitle:\"${company}\" `;
+  if (company) fullQuery += `intitle:"${company}" `;
   if (keywordQuery) fullQuery += keywordQuery;
 
   if (!fullQuery) {
